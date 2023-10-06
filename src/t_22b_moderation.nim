@@ -15,6 +15,7 @@ load()
 const
   eateryApi = "https://api.eatery.se/wp-json/eatery/v1/load"
   eateryPdf = "https://api.eatery.se/skriv-ut/?id="
+  errorMsg = "Failed please try again!"
 
 let
   token =  os.getEnv("TOKEN")
@@ -44,57 +45,37 @@ cmd.addSlash("ping") do ():
 
 cmd.addSlash("eatery") do ():
   ## View the current eatery menu at kista-nod
-  let
-    eatery = fetchJson(eateryApi)
+  try:
+    let
+      eatery = fetchJson(eateryApi)
 
-    kistaNod = eatery{"eateries"}{"/kista-nod"}
-    menuId = kistaNod{"menues"}{"lunchmeny"}.getInt()
-    title = kistaNod{"title"}.getStr()
+      kistaNod = eatery{"eateries"}{"/kista-nod"}
+      menuId = kistaNod{"menues"}{"lunchmeny"}.getInt()
+      title = kistaNod{"title"}.getStr()
 
-    menu = eatery{"menues"}{$menuId}
-    menuTitle = menu{"content"}{"title"}.getStr()
-    content = menu{"content"}{"content"}.getStr()
+      menu = eatery{"menues"}{$menuId}
+      menuTitle = menu{"content"}{"title"}.getStr()
+      content = menu{"content"}{"content"}.getStr()
 
-    contentMd = (content.replace("<h2>", "").replace("</h2>", "")
-                        .replace("<p>", "").replace("</p>", "")
-                        .replace("<br />", "")
+      contentMd = (content.replace("<h2>", "").replace("</h2>", "")
+                          .replace("<p>", "").replace("</p>", "")
+                          .replace("<br />", "")
 
-                        .replace("<em>", "*").replace("</em>", "*")
-                        .replace("<strong>", "**").replace("</strong>", "**"))
-    titleMd = &"# {title}\n## {menuTitle}"
+                          .replace("<em>", "*").replace("</em>", "*")
+                          .replace("<strong>", "**").replace("</strong>", "**"))
+      titleMd = &"# {title}\n## {menuTitle}"
 
-    pdf = eateryPdf & $menuId
-
-
-  await discord.api.interactionResponseMessage(i.id, i.token,
-  irtChannelMessageWithSource,
-  InteractionCallbackDataMessage(
-    content: &"{titleMd}\n{contentMd}\n\npdf: {pdf}"
-  ))
+      pdf = eateryPdf & $menuId
 
 
-# SUPER SECRET
-cmd.addSlash("s") do ():
-  ## s
-  let username = i.member.get().user.username
-  if username == "minus420iq":
     await discord.api.interactionResponseMessage(i.id, i.token,
     irtChannelMessageWithSource,
     InteractionCallbackDataMessage(
-      content: "t"
+      content: &"{titleMd}\n{contentMd}\n\npdf: {pdf}"
     ))
-  elif username == "dou2ble":
-    await discord.api.interactionResponseMessage(i.id, i.token,
-    irtChannelMessageWithSource,
-    InteractionCallbackDataMessage(
-      content: "double"
-    ))
-  else:
-    await discord.api.interactionResponseMessage(i.id, i.token,
-    irtChannelMessageWithSource,
-    InteractionCallbackDataMessage(
-      content: "te"
-    ))
+  except:
+    discard
+
 
 # Connect to Discord and run the bot.
 waitFor discord.startSession()
